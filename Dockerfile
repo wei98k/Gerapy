@@ -15,6 +15,8 @@ RUN set -eux; \
 
 
 FROM python:3.10-slim
+
+ENV TZ=Asia/Shanghai
 # Install gerapy
 ENV GERAPY_HOME_DIR ${GERAPY_HOME_DIR:-/home/gerapy}
 ENV GERAPY_GROUP ${GERAPY_GROUP:-gerapy}
@@ -26,8 +28,10 @@ WORKDIR $GERAPY_HOME_DIR
 COPY --from=build /app/dist/gerapy-*.whl /tmp/
 RUN \
     set -eux; \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone; \
     apt-get update; \
     apt-get install -y --no-install-recommends tini gosu; \
+    pip install --upgrade setuptools==70.3.0; \
     pip install /tmp/gerapy-*.whl; \
     rm -f /tmp/gerapy-*.whl; \
     mkdir -p $GERAPY_HOME_DIR; \
@@ -36,6 +40,7 @@ RUN \
     chown $GERAPY_USER:$GERAPY_GROUP $GERAPY_HOME_DIR; \
     pip cache purge; \
     apt autoclean; \
+    pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
     rm -rf /var/lib/apt/lists/*;
 # Build run script
 RUN \
